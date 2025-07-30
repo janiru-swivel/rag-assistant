@@ -1,0 +1,72 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.pdb
+*.egg
+*.egg-info/
+dist/
+build/
+*.manifest
+*.spec
+ 
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+.ENV/
+ 
+# IDEs and Editors
+.vscode/
+.idea/
+*.swp
+ 
+# OS Files
+.DS_Store
+Thumbs.db
+ 
+# Logs and databases
+*.log
+*.sqlite3
+*.db
+ 
+# FastAPI static and media files
+/static/*
+!/static/.gitkeep
+/media/*
+!/media/.gitkeep
+ 
+# Uvicorn reload artifacts
+*.reload
+ 
+# Coverage and testing
+htmlcov/
+.tox/
+.nox/
+.coverage
+coverage.xml
+pytest_cache/
+.cache
+ 
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+ 
+# Pydantic
+*.json
+ 
+# Env files
+.env
+.env.*
+ 
+# Jupyter Notebooks
+.ipynb_checkpoints/
+ 
+# __init__.py files
+!**/__init__.py
+ 
+ 
