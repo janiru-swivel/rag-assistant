@@ -15,7 +15,7 @@ def get_rag_service():
     return RAGService(
         pinecone_api_key=settings.PINECONE_API_KEY,
         pinecone_index_name=settings.PINECONE_INDEX_NAME,
-        gemini_api_key=settings.GOOGLE_API_KEY
+        gemini_api_key=settings.GOOGLE_GENERATIVE_AI_API_KEY
     )
 
 @router.post("/upload", response_model=UploadResponse)
