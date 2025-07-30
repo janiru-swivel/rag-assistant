@@ -1,4 +1,4 @@
-from auth import router as auth_router
+from .auth import router as auth_router
 from .chat import router as chat_router
 from .history import router as history_router
 from .ingestion import router as ingestion_router
