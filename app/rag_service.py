@@ -1,6 +1,8 @@
 import os
 import PyPDF2
-from typing import List, Tuple
+import hashlib
+import time
+from typing import List, Tuple, Dict
 from fastapi import UploadFile
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from langchain_pinecone import PineconeVectorStore
@@ -13,15 +15,23 @@ class RAGService:
         self.pinecone_api_key = pinecone_api_key
         self.pinecone_index_name = pinecone_index_name
         self.gemini_api_key = gemini_api_key
+        
+        # Simple response cache for faster repeated queries
+        self.query_cache: Dict[str, Tuple[str, List[str], float]] = {}
+        self.cache_expiry = 300  # 5 minutes cache expiry
+        
+        # Set environment variable for Google API
+        os.environ["GOOGLE_API_KEY"] = gemini_api_key
+        
         self.text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-        self.embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", google_api_key=gemini_api_key)
+        self.embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
         # Optimize LLM for faster responses
         self.llm = ChatGoogleGenerativeAI(
-            model="gemini-1.5-flash", 
-            google_api_key=gemini_api_key,
-            temperature=0.1,  # Lower temperature for more consistent responses
-            max_tokens=500,   # Limit response length for faster generation
-            timeout=30        # Set timeout to prevent hanging
+            model="gemini-2.0-flash",
+            temperature=0.1,  # Lower temperature for faster, more focused responses
+            max_tokens=300,  # Limit output tokens for faster responses
+            timeout=15,  # 15-second timeout
+            max_retries=1  # Fewer retries for faster failure handling
         )
         self._initialize_pinecone()
 
@@ -96,12 +106,25 @@ class RAGService:
             if not query or not query.strip():
                 return "Please provide a valid question.", []
             
-            # Limit query length to prevent performance issues
-            if len(query) > 1000:
-                query = query[:1000]
+            # Check cache first for faster responses
+            query_hash = hashlib.md5(query.lower().strip().encode()).hexdigest()
+            current_time = time.time()
             
-            # Perform similarity search with timeout handling
-            docs = self.vector_store.similarity_search(query, k=3)
+            if query_hash in self.query_cache:
+                cached_answer, cached_sources, cache_time = self.query_cache[query_hash]
+                if current_time - cache_time < self.cache_expiry:
+                    print(f"Cache hit for query: {query[:50]}...")
+                    return cached_answer, cached_sources
+                else:
+                    # Remove expired cache entry
+                    del self.query_cache[query_hash]
+            
+            # Limit query length to prevent performance issues
+            if len(query) > 500:  # Reduced from 1000 to 500
+                query = query[:500]
+            
+            # Perform similarity search with reduced results for faster processing
+            docs = self.vector_store.similarity_search(query, k=2)  # Reduced from 3 to 2
             
             if not docs:
                 return "I don't have enough information to answer your question based on the uploaded documents.", []
@@ -110,24 +133,34 @@ class RAGService:
             context = "\n\n".join([doc.page_content for doc in docs])
             sources = [doc.metadata.get("source", "Unknown") for doc in docs]
             
-            # Limit context length to prevent token limits
-            if len(context) > 4000:
-                context = context[:4000] + "..."
+            # Limit context length more aggressively for faster processing
+            if len(context) > 2000:  # Reduced from 4000 to 2000
+                context = context[:2000] + "..."
             
-            # Create a more structured prompt
-            prompt = f"""Based on the following context, please answer the question concisely and accurately.
+            # Create a more concise prompt for faster responses
+            prompt = f"""Answer briefly based on this context:
 
-Context:
 {context}
 
 Question: {query}
 
-Please provide a clear and concise answer based only on the information provided in the context above. If the context doesn't contain enough information to answer the question, please say so."""
+Provide a concise answer (max 2-3 sentences)."""
 
             # Use async invoke with timeout
             response = await self.llm.ainvoke(prompt)
             
-            return str(response.content), sources
+            answer = str(response.content)
+            
+            # Cache the response for future use
+            self.query_cache[query_hash] = (answer, sources, current_time)
+            
+            # Keep cache size manageable (max 100 entries)
+            if len(self.query_cache) > 100:
+                oldest_key = min(self.query_cache.keys(), 
+                               key=lambda k: self.query_cache[k][2])
+                del self.query_cache[oldest_key]
+            
+            return answer, sources
             
         except Exception as e:
             print(f"Error in query processing: {str(e)}")
