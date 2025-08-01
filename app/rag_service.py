@@ -5,10 +5,10 @@ import time
 from typing import List, Tuple, Dict
 from fastapi import UploadFile
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
-from langchain_pinecone import PineconeVectorStore
+from langchain_community.vectorstores import Pinecone as PineconeVectorStore
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
-from pinecone import Pinecone, ServerlessSpec
+import pinecone
 
 class RAGService:
     def __init__(self, pinecone_api_key: str, pinecone_index_name: str, gemini_api_key: str):
@@ -36,18 +36,19 @@ class RAGService:
         self._initialize_pinecone()
 
     def _initialize_pinecone(self):
-        pc = Pinecone(api_key=self.pinecone_api_key)
-        if self.pinecone_index_name not in pc.list_indexes().names():
-            pc.create_index(
+        pinecone.init(api_key=self.pinecone_api_key, environment="us-east-1-aws")
+        if self.pinecone_index_name not in pinecone.list_indexes():
+            pinecone.create_index(
                 name=self.pinecone_index_name,
                 dimension=768,  # Gemini embedding dimension
-                metric="cosine",
-                spec=ServerlessSpec(cloud="aws", region="us-east-1")
+                metric="cosine"
             )
+        
+        index = pinecone.Index(self.pinecone_index_name)
         self.vector_store = PineconeVectorStore(
-            index_name=self.pinecone_index_name,
+            index=index,
             embedding=self.embeddings,
-            pinecone_api_key=self.pinecone_api_key
+            text_key="text"
         )
 
     def _process_pdf_file(self, content: bytes, filename: str) -> List[Document]:
