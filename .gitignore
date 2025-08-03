@@ -19,7 +19,9 @@ ENV/
 .venv/
 .ENV/
  
-# IDEs and Editors
+# IDEs and EditorsPINECONE_API_KEY = ""
+PINECONE_INDEX_NAME = "chat-application"
+GOOGLE_GENERATIVE_AI_API_KEY = "your_google_generative_ai_api_key"
 .vscode/
 .idea/
 *.swp
@@ -61,7 +63,6 @@ dmypy.json
  
 # Env files
 .env
-.env.*
  
 # Jupyter Notebooks
 .ipynb_checkpoints/
