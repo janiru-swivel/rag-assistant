@@ -19,9 +19,7 @@ ENV/
 .venv/
 .ENV/
  
-# IDEs and EditorsPINECONE_API_KEY = ""
-PINECONE_INDEX_NAME = "chat-application"
-GOOGLE_GENERATIVE_AI_API_KEY = "your_google_generative_ai_api_key"
+# IDEs and Editors
 .vscode/
 .idea/
 *.swp
@@ -58,8 +56,16 @@ pytest_cache/
 .dmypy.json
 dmypy.json
  
-# Pydantic
-*.json
+# Test files
+test_*.json
+test_*.py
+*_test.py
+test/
+tests/
+ 
+# Temporary files
+*.tmp
+*.temp
  
 # Env files
 .env
@@ -69,5 +75,8 @@ dmypy.json
  
 # __init__.py files
 !**/__init__.py
+
+# Keep important scripts
+!cleanup.sh
  
  

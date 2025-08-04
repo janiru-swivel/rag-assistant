@@ -5,6 +5,7 @@ class Settings(BaseSettings):
     PINECONE_API_KEY: str = os.getenv("PINECONE_API_KEY", "")
     PINECONE_INDEX_NAME: str = os.getenv("PINECONE_INDEX_NAME", "rag-assistant")
     GOOGLE_GENERATIVE_AI_API_KEY: str = os.getenv("GOOGLE_GENERATIVE_AI_API_KEY", "")
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "")
 
     class Config:
         env_file = ".env"
