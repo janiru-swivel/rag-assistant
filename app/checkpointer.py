@@ -222,7 +222,6 @@ class ChatCheckpointer:
         if len(title) > 50:
             title = title[:47] + "..."
         
-        # Remove special characters that might cause issues
         import re
         title = re.sub(r'[^\w\s-]', '', title)
         

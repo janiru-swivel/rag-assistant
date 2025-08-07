@@ -13,7 +13,7 @@ class RAGService:
         # Validate API keys
         if not pinecone_api_key or pinecone_api_key.strip() == "":
             raise ValueError("Pinecone API key is missing or empty")
-        if not gemini_api_key or gemini_api_key.strip() == "" or "your_google_generative_ai_api_key" in gemini_api_key or "AIzaSyDummy" in gemini_api_key:
+        if not gemini_api_key or gemini_api_key.strip() == "" or "google_generative_ai_api_key" in gemini_api_key or "AIzaSyDummy" in gemini_api_key:
             raise ValueError("Google Generative AI API key is missing or not properly configured")
         
         self.pinecone_api_key = pinecone_api_key
@@ -34,7 +34,7 @@ class RAGService:
                 timeout=30        # Set timeout to prevent hanging
             )
         except Exception as e:
-            raise ValueError(f"Failed to initialize Google Generative AI services. Check your API key: {str(e)}")
+            raise ValueError(f"Failed to initialize Google Generative AI services. Check the API key: {str(e)}")
         
         self._initialize_pinecone()
 
