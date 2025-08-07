@@ -56,17 +56,27 @@ pytest_cache/
 .dmypy.json
 dmypy.json
  
-# Pydantic
-*.json
+# Test files
+test_*.json
+test_*.py
+*_test.py
+test/
+tests/
+ 
+# Temporary files
+*.tmp
+*.temp
  
 # Env files
 .env
-.env.*
  
 # Jupyter Notebooks
 .ipynb_checkpoints/
  
 # __init__.py files
 !**/__init__.py
+
+# Keep important scripts
+!cleanup.sh
  
  

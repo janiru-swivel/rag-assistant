@@ -1,0 +1,446 @@
+{
+  "info": {
+    "name": "RAG Assistant API - Simple Collection",
+    "description": "Simple Postman collection for testing the RAG Assistant API with checkpointing and conversation management features.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8001",
+      "type": "string"
+    },
+    {
+      "key": "conversation_id",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/health",
+          "host": ["{{base_url}}"],
+          "path": ["health"]
+        },
+        "description": "Check if the API server is running"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Response has status field\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('status');",
+              "    pm.expect(jsonData.status).to.eql('healthy');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Upload Document",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "files",
+              "type": "file",
+              "src": [],
+              "description": "Upload PDF, TXT, MD, or DOC files"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/ingestion/upload",
+          "host": ["{{base_url}}"],
+          "path": ["ingestion", "upload"]
+        },
+        "description": "Upload documents to the knowledge base"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Response has expected fields\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('message');",
+              "    pm.expect(jsonData).to.have.property('documents_processed');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Start New Conversation",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"What are the key principles of AI ethics?\",\n  \"conversation_id\": null\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/chat/",
+          "host": ["{{base_url}}"],
+          "path": ["chat", ""]
+        },
+        "description": "Start a new conversation with automatic title generation"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Response has message data\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('id');",
+              "    pm.expect(jsonData).to.have.property('query');",
+              "    pm.expect(jsonData).to.have.property('answer');",
+              "    pm.expect(jsonData).to.have.property('conversation_id');",
+              "    pm.expect(jsonData).to.have.property('sources');",
+              "    ",
+              "    // Save conversation ID for next requests",
+              "    pm.collectionVariables.set('conversation_id', jsonData.conversation_id);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Continue Conversation",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"Can you elaborate on transparency in AI systems?\",\n  \"conversation_id\": {{conversation_id}}\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/chat/",
+          "host": ["{{base_url}}"],
+          "path": ["chat", ""]
+        },
+        "description": "Continue an existing conversation"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Response has message data\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('id');",
+              "    pm.expect(jsonData).to.have.property('query');",
+              "    pm.expect(jsonData).to.have.property('answer');",
+              "    pm.expect(jsonData).to.have.property('conversation_id');",
+              "    pm.expect(jsonData.conversation_id).to.eql(parseInt(pm.collectionVariables.get('conversation_id')));",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Get All Conversations",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/history/conversations",
+          "host": ["{{base_url}}"],
+          "path": ["history", "conversations"]
+        },
+        "description": "Get all conversations with message counts"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Response is an array\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.be.an('array');",
+              "});",
+              "",
+              "pm.test(\"Each conversation has required fields\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    if (jsonData.length > 0) {",
+              "        pm.expect(jsonData[0]).to.have.property('id');",
+              "        pm.expect(jsonData[0]).to.have.property('title');",
+              "        pm.expect(jsonData[0]).to.have.property('message_count');",
+              "    }",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Get Conversation Details",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/history/conversations/{{conversation_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["history", "conversations", "{{conversation_id}}"]
+        },
+        "description": "Get full conversation details with all messages"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Response has conversation details\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('id');",
+              "    pm.expect(jsonData).to.have.property('title');",
+              "    pm.expect(jsonData).to.have.property('messages');",
+              "    pm.expect(jsonData.messages).to.be.an('array');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Get Conversation Checkpoint",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/history/conversations/{{conversation_id}}/checkpoint",
+          "host": ["{{base_url}}"],
+          "path": [
+            "history",
+            "conversations",
+            "{{conversation_id}}",
+            "checkpoint"
+          ]
+        },
+        "description": "Get the latest checkpoint for the conversation"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Checkpoint has conversation data\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('conversation_id');",
+              "    pm.expect(jsonData).to.have.property('title');",
+              "    pm.expect(jsonData).to.have.property('messages');",
+              "    pm.expect(jsonData).to.have.property('message_count');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Query with Context",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"What are some practical ways to implement these principles?\",\n  \"conversation_id\": {{conversation_id}}\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/chat/conversation/{{conversation_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["chat", "conversation", "{{conversation_id}}"]
+        },
+        "description": "Query using conversation context endpoint"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Response has contextual answer\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('answer');",
+              "    pm.expect(jsonData.answer.length).to.be.above(10);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "9. Create Manual Conversation",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"AI Risk Management Discussion\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/history/conversations",
+          "host": ["{{base_url}}"],
+          "path": ["history", "conversations"]
+        },
+        "description": "Manually create a new conversation with custom title"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 201\", function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "",
+              "pm.test(\"Response has conversation data\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('id');",
+              "    pm.expect(jsonData).to.have.property('title');",
+              "    pm.expect(jsonData.title).to.eql('AI Risk Management Discussion');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "10. Delete Conversation",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/history/conversations/{{conversation_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["history", "conversations", "{{conversation_id}}"]
+        },
+        "description": "Delete a conversation (soft delete)"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 204\", function () {",
+              "    pm.response.to.have.status(204);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Set default base URL if not already set",
+          "if (!pm.collectionVariables.get('base_url')) {",
+          "    pm.collectionVariables.set('base_url', 'http://127.0.0.1:8001');",
+          "}",
+          "",
+          "console.log('🚀 RAG Assistant API - Simple Collection');",
+          "console.log('📋 Testing checkpointing and conversation management');",
+          "console.log('🌐 Base URL: ' + pm.collectionVariables.get('base_url'));"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global test for all requests",
+          "pm.test(\"Response time is acceptable\", function () {",
+          "    pm.expect(pm.response.responseTime).to.be.below(5000);",
+          "});",
+          "",
+          "pm.test(\"Response has JSON content-type\", function () {",
+          "    if (pm.response.code === 200 || pm.response.code === 201) {",
+          "        pm.expect(pm.response.headers.get('Content-Type')).to.include('json');",
+          "    }",
+          "});"
+        ]
+      }
+    }
+  ]
+}
