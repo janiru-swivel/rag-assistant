@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="RAG Knowledge Assistant",
-    description="A Retrieval-Augmented Generation (RAG) based knowledge assistant using FastAPI, Pinecone, LangChain, and Gemini API.",
+    description="RAG based knowledge assistant using FastAPI, Pinecone, LangChain, and Gemini API.",
     version="1.0.0",
     openapi_tags=[
         {"name": "auth", "description": "Authentication endpoints"},
